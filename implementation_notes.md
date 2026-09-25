@@ -1,8 +1,8 @@
-# gopro-still-clipper — Product Workflow Description
+# rapid-surf-video-clipper — Product Workflow Description
 
 ## Purpose
 
-gopro-still-clipper is a desktop tool that takes a long GoPro surf session recording and automatically extracts short clips of active surfing. The user should be able to go from a raw 10-minute video to a folder of trimmed, exported clips in a few minutes of interaction, with the heavy lifting done by the tool.
+rapid-surf-video-clipper is a desktop tool that takes a long GoPro surf session recording and automatically extracts short clips of active surfing. The user should be able to go from a raw 10-minute video to a folder of trimmed, exported clips in a few minutes of interaction, with the heavy lifting done by the tool.
 
 ---
 

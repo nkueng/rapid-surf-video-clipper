@@ -36,7 +36,7 @@ def check_ffmpeg():
 
 def main():
     parser = argparse.ArgumentParser(
-        prog="gopro-still-clipper",
+        prog="rapid-surf-video-clipper",
         description="Extract surfing clips from GoPro footage using YOLOv8",
     )
     parser.add_argument("video", nargs="?", help="Path to video file")
@@ -94,7 +94,7 @@ def main():
     phase = target_phase if session_name else "session-prompt"
 
     # Import here so server module can reference args
-    from gopro_still_clipper import server
+    from rapid_surf_video_clipper import server
 
     server.app_state.update(
         {
@@ -123,7 +123,7 @@ def main():
     threading.Thread(target=_warm_model, daemon=True).start()
 
     url = f"http://localhost:{args.port}"
-    print(f"gopro-still-clipper running at {url}")
+    print(f"rapid-surf-video-clipper running at {url}")
     if args.video:
         print(f"Video: {args.video}")
 

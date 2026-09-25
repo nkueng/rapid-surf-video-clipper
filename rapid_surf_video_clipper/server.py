@@ -15,8 +15,8 @@ from fastapi import FastAPI, WebSocket, WebSocketDisconnect
 from fastapi.responses import FileResponse, JSONResponse, Response
 from fastapi.staticfiles import StaticFiles
 
-from gopro_still_clipper.clipper import build_clips, point_in_polygon
-from gopro_still_clipper.exporter import estimate_encode_rate, export_clips, safe_name
+from rapid_surf_video_clipper.clipper import build_clips, point_in_polygon
+from rapid_surf_video_clipper.exporter import estimate_encode_rate, export_clips, safe_name
 
 # ---------------------------------------------------------------------------
 # Global application state

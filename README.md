@@ -1,9 +1,10 @@
-# gopro-still-clipper
+# rapid-surf-video-clipper
 
-A local desktop tool that scans a long GoPro surf session recording, detects
-the segments where someone is actually surfing (via person detection), and
-lets you review and export those segments as trimmed MP4 clips — without
-ever loading the full video into memory or leaving your machine.
+A local desktop tool that scans a long GoPro recording of a rapid/river surf
+session — a fixed camera on a static standing wave — detects the segments
+where someone is actually surfing (via person detection), and lets you
+review and export those segments as trimmed MP4 clips — without ever
+loading the full video into memory or leaving your machine.
 
 It runs as a small local web app: a Python/FastAPI backend does the video
 processing, and a plain HTML/JS frontend (opened automatically in your
@@ -33,8 +34,8 @@ source .venv/bin/activate
 pip install -e .
 ```
 
-This installs the `gopro-still-clipper` package in editable mode and registers the
-`gopro-still-clipper` console script (see `pyproject.toml`). It pulls in FastAPI,
+This installs the `rapid-surf-video-clipper` package in editable mode and registers the
+`rapid-surf-video-clipper` console script (see `pyproject.toml`). It pulls in FastAPI,
 uvicorn, OpenCV, Ultralytics (YOLOv8), and NumPy.
 
 The YOLOv8n weights (`yolov8n.pt`, ~6 MB) are **not** included in this
@@ -46,13 +47,13 @@ for a machine with no internet, drop a `yolov8n.pt` into the repo root
 ### Run
 
 ```bash
-gopro-still-clipper /path/to/gopro_session.mp4
+rapid-surf-video-clipper /path/to/gopro_session.mp4
 ```
 
 or, without installing the script entry point:
 
 ```bash
-python -m gopro_still_clipper /path/to/gopro_session.mp4
+python -m rapid_surf_video_clipper /path/to/gopro_session.mp4
 ```
 
 This starts a local server (default `http://localhost:8765`) and opens it
@@ -108,10 +109,10 @@ Examples:
 
 ```bash
 # Batch-process a session, trusting the detector, skip manual review
-gopro-still-clipper session.mp4 --skip-review --frame-step 15
+rapid-surf-video-clipper session.mp4 --skip-review --frame-step 15
 
 # Reuse a saved detection zone from a previous session
-gopro-still-clipper session.mp4 --roi zones/lineup.json
+rapid-surf-video-clipper session.mp4 --roi zones/lineup.json
 ```
 
 ---

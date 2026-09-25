@@ -1,4 +1,4 @@
-/* gopro-still-clipper frontend — vanilla JS state machine */
+/* rapid-surf-video-clipper frontend — vanilla JS state machine */
 'use strict';
 
 // ── State ─────────────────────────────────────────────────────────────────
@@ -190,7 +190,7 @@ function renderBadge({ step, label }) {
       badge.appendChild(l);
     }
   }
-  document.title = label ? `${label} — gopro-still-clipper` : 'gopro-still-clipper';
+  document.title = label ? `${label} — rapid-surf-video-clipper` : 'rapid-surf-video-clipper';
 }
 function setPhaseView(name) {
   baseView = { step: VIEW_STEPS[name] || null, label: VIEW_NAMES[name] || name };

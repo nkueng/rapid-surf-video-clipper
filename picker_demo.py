@@ -26,7 +26,7 @@ HTML = """
 <html>
 <head>
 <meta charset="UTF-8">
-<title>gopro-still-clipper — file picker demo</title>
+<title>rapid-surf-video-clipper — file picker demo</title>
 <style>
   body { font-family: -apple-system, sans-serif; background: #0f1117; color: #e5e7eb;
          display: flex; align-items: center; justify-content: center; height: 100vh; margin: 0; }
@@ -56,7 +56,7 @@ HTML = """
 </head>
 <body>
 <div class="card">
-  <h2>gopro-still-clipper &mdash; file picker demo</h2>
+  <h2>rapid-surf-video-clipper &mdash; file picker demo</h2>
   <p class="status"><span class="ws-dot" id="ws-dot"></span><span id="ws-status">Connecting…</span></p>
 
   <div class="row">

@@ -3,9 +3,9 @@ requires = ["setuptools>=68", "wheel"]
 build-backend = "setuptools.build_meta"
 
 [project]
-name = "gopro-still-clipper"
+name = "rapid-surf-video-clipper"
 version = "0.1.0"
-description = "Extract surfing clips from GoPro footage using YOLOv8 person detection"
+description = "Extract rapid/river surfing clips from GoPro footage using YOLOv8 person detection"
 requires-python = ">=3.10"
 dependencies = [
     "fastapi>=0.111",
@@ -16,11 +16,11 @@ dependencies = [
 ]
 
 [project.scripts]
-gopro-still-clipper = "gopro_still_clipper.__main__:main"
+rapid-surf-video-clipper = "rapid_surf_video_clipper.__main__:main"
 
 [tool.setuptools.packages.find]
 where = ["."]
-include = ["gopro_still_clipper*"]
+include = ["rapid_surf_video_clipper*"]
 
 [tool.setuptools.package-data]
-gopro_still_clipper = ["static/*"]
+rapid_surf_video_clipper = ["static/*"]
