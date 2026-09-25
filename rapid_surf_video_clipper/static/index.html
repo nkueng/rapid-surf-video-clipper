@@ -237,11 +237,6 @@
         <button id="btn-edit-crop" class="btn-secondary btn-sm">Edit…</button>
         <button id="btn-clear-crop" class="btn-secondary btn-sm" hidden>Clear</button>
       </div>
-      <div class="setting-group setting-group-wide">
-        <span class="setting-label">Output directory</span>
-        <input type="text" id="output-dir-input" />
-        <button id="btn-browse-dir" class="btn-secondary btn-sm">Browse…</button>
-      </div>
     </div>
 
     <p class="export-hint">
@@ -251,11 +246,18 @@
 
     <div class="export-grid" id="export-grid"></div>
 
+    <div class="export-outdir-row" id="group-assign-row">
+      <span class="setting-label">Folder name</span>
+      <input type="text" id="group-name-input" placeholder="Folder name…" disabled />
+      <button id="btn-assign-group" class="btn-secondary btn-sm" disabled>Assign to folder</button>
+    </div>
+
     <div class="export-footer">
       <button id="btn-back" class="btn-secondary">← Back</button>
       <div class="footer-actions">
-        <input type="text" id="group-name-input" placeholder="Folder name…" />
-        <button id="btn-assign-group" class="btn-secondary btn-sm">Assign to folder</button>
+        <span class="setting-label">Output directory</span>
+        <input type="text" id="output-dir-input" />
+        <button id="btn-browse-dir" class="btn-secondary btn-sm">Browse…</button>
         <span id="export-size-total" class="export-size-total"></span>
         <button id="btn-export" class="btn-primary">Export <span id="export-count">0</span> clips →</button>
       </div>

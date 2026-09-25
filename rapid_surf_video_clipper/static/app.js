@@ -1430,6 +1430,7 @@ function renderExportSettings() {
   updateExportGrid();
   updateCropStatus();
   updateCrfEnabled();
+  updateGroupAssignState();
   const sessionLabel = document.getElementById('session-label');
   if (sessionLabel) sessionLabel.textContent = S.sessionName || 'unnamed';
   const outInput = document.getElementById('output-dir-input');
@@ -1702,8 +1703,21 @@ function makeExportCard(clip) {
       S.selectedExportCards.add(clip.id);
       card.classList.add('selected');
     }
+    updateGroupAssignState();
   });
   return card;
+}
+
+// The folder-name field only makes sense once at least one clip is selected.
+function updateGroupAssignState() {
+  const row = document.getElementById('group-assign-row');
+  const input = document.getElementById('group-name-input');
+  const btn = document.getElementById('btn-assign-group');
+  const active = S.selectedExportCards.size > 0;
+  row.classList.toggle('disabled', !active);
+  input.disabled = !active;
+  btn.disabled = !active;
+  if (!active) input.value = '';
 }
 
 // Resolution toggle
@@ -1759,6 +1773,7 @@ document.getElementById('btn-assign-group').addEventListener('click', () => {
   }
   S.selectedExportCards.clear();
   input.value = '';
+  updateGroupAssignState();
   updateExportGrid();          // the cards visibly move into the folder group
   wsSend({ type: 'set_folder_groups', folder_groups: S.folderGroups });
 });
