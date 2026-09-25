@@ -80,12 +80,27 @@ def load_model():
 app = FastAPI()
 
 STATIC_DIR = Path(__file__).parent / "static"
-app.mount("/static", StaticFiles(directory=STATIC_DIR), name="static")
+
+
+class NoCacheStaticFiles(StaticFiles):
+    """StaticFiles serves no Cache-Control header at all, so browsers are free
+    to reuse a stale app.js/style.css on a plain reload without even checking
+    with the server. This is a local single-user dev tool where the source on
+    disk can change under a running server — force revalidation on every
+    request instead (an ETag still turns most of these into cheap 304s)."""
+
+    def file_response(self, *args, **kwargs):
+        response = super().file_response(*args, **kwargs)
+        response.headers["Cache-Control"] = "no-cache"
+        return response
+
+
+app.mount("/static", NoCacheStaticFiles(directory=STATIC_DIR), name="static")
 
 
 @app.get("/")
 async def index():
-    return FileResponse(STATIC_DIR / "index.html")
+    return FileResponse(STATIC_DIR / "index.html", headers={"Cache-Control": "no-cache"})
 
 
 # These endpoints all serve whatever video is currently loaded. Within one
