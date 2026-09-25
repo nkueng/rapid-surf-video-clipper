@@ -117,6 +117,53 @@ rapid-surf-video-clipper session.mp4 --roi zones/lineup.json
 
 ---
 
+## Assumptions
+
+Person detection (YOLOv8n, `classes=[0]`, `conf=0.30` — see `server.py`) is
+only reliable under a few conditions about the source footage:
+
+- **The camera is static.** Detection itself doesn't require a fixed
+  camera, but the detection-zone (ROI) polygon is drawn once in frame
+  coordinates and reused for the whole scan — if the camera pans, moves, or
+  is handheld, the zone no longer lines up with the physical area (e.g. the
+  lineup) it was drawn over. This matches the intended use case (a GoPro on
+  a tripod/mount on the riverbank, fixed on a static rapid or wave feature)
+  but not handheld or body-mounted footage.
+- **Subjects are large enough in frame for YOLOv8 to detect.** Frames are
+  downscaled/letterboxed to 640px on the long side before inference
+  regardless of source resolution, and YOLO's smallest detection head
+  operates on an 80×80 grid over that 640px input — objects much below
+  roughly 32×32px there fall into COCO's "small object" bucket, where
+  detection accuracy drops sharply, especially for the nano model used here
+  (traded for speed over the larger YOLOv8 variants). As a rough guide, a
+  person should be at least ~30–60px tall in that 640px frame to be picked
+  up reliably at the 0.30 confidence threshold — for 4K GoPro source
+  (downscaled ~6× to reach 640px) that's roughly 180–360px tall in the
+  original frame, i.e. reasonably close to the camera rather than a distant
+  speck out past the lineup.
+- **Adequate lighting and visibility.** The model is trained on ordinary
+  daylight photos; backlit silhouettes, night footage, heavy fog, or spray
+  obscuring the subject will reduce detection confidence and frequency.
+- **No occlusion of the subject for more than a handful of frames.**
+  Someone submerged in whitewash or hidden behind other people/gear for
+  longer than the `gap_fill` threshold will fragment into separate clips
+  instead of one continuous one. This isn't a fixed cutoff — it's a
+  tunable parameter (default 2s, adjustable via the gap-fill slider on the
+  review screen's "re-analyse" controls), measured in elapsed video time
+  rather than a literal frame count, since only every `--frame-step`th
+  frame (default every 10th) is actually analysed.
+- **Detection means "a person is in frame," not "someone is surfing."**
+  The model has no notion of the activity — bystanders on the bank,
+  photographers, or anyone else in frame trigger detection identically to
+  a surfer. The
+  detection-zone polygon narrows this to a physical area, but doesn't
+  distinguish activity within it.
+- **General-purpose, not surf-specific.** YOLOv8n here is a stock
+  COCO-trained person detector, not fine-tuned for water sports — unusual
+  poses (prone paddling, a mostly-submerged body) may get lower confidence
+  than a clearly visible, upright person.
+
+
 ## Design choices
 
 **Local-first, single-user desktop tool, not a hosted service.**
