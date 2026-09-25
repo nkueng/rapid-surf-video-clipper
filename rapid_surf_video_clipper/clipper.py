@@ -105,7 +105,7 @@ def build_clips(
                 "duration": round(end - start, 3),
                 "avg_conf": round(avg_conf, 3),
                 "confidence": confidence_label(avg_conf),
-                "keep": True,
+                "keep": False,
             }
         )
 

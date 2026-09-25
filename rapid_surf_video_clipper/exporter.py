@@ -202,7 +202,7 @@ def export_clips(
     out_root = Path(output_dir).expanduser()
     out_root.mkdir(parents=True, exist_ok=True)
     results = []
-    approved = [c for c in clips if c.get("keep", True)]
+    approved = [c for c in clips if c.get("keep", False)]
 
     # Source video name, so a clip can be traced back to the footage it came
     # from even after several videos export into the same session folder.

@@ -425,9 +425,9 @@ async def _handle_client_message(msg: dict):
             video_duration=app_state["video_duration"],
         )
         # Preserve keep/reject decisions where possible
-        old_keeps = {c["id"]: c.get("keep", True) for c in app_state["clips"]}
+        old_keeps = {c["id"]: c.get("keep", False) for c in app_state["clips"]}
         for c in clips:
-            c["keep"] = old_keeps.get(c["id"], True)
+            c["keep"] = old_keeps.get(c["id"], False)
         app_state["clips"] = clips
         await _broadcast({"type": "clips_updated", "clips": clips})
 
@@ -699,7 +699,7 @@ async def _run_export(clips: list[dict], settings: dict):
         # Keys may come as strings from JSON
         folder_groups = {int(k): v for k, v in folder_groups.items()}
 
-        total = len([c for c in clips if c.get("keep", True)])
+        total = len([c for c in clips if c.get("keep", False)])
 
         def on_progress(i, n, filename):
             loop.call_soon_threadsafe(

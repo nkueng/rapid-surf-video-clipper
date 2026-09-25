@@ -72,6 +72,16 @@ function wsSend(obj) {
   }
 }
 
+// clip.id is just a sequential index reassigned on every scan/reanalyse, so a
+// new video (or a reanalyse with different gap-fill/padding) can reuse the
+// exact same /thumbnail/<id> URL for a completely different frame. Browsers
+// cache <img> requests by URL regardless of Cache-Control in some cases, so
+// tie the URL to the clip's actual timing to force a fresh fetch whenever the
+// underlying frame changes.
+function thumbnailUrl(clip) {
+  return `/thumbnail/${clip.id}?t=${clip.start.toFixed(2)}-${clip.end.toFixed(2)}`;
+}
+
 // ── Message handling ───────────────────────────────────────────────────────
 function handleMessage(msg) {
   switch (msg.type) {
@@ -489,7 +499,7 @@ tlCanvas.addEventListener('mousedown', e => {
       return;
     }
     if (ts >= clip.start && ts <= clip.end) {
-      S.dragState = { clipId: clip.id, handle: 'body', startX: mx, origStart: clip.start, origEnd: clip.end, origDur: clip.end - clip.start };
+      S.dragState = { clipId: clip.id, handle: 'body', startX: mx, origStart: clip.start, origEnd: clip.end, origDur: clip.end - clip.start, moved: false };
       selectClip(clip.id, { scroll: true });
       return;
     }
@@ -513,6 +523,11 @@ tlCanvas.addEventListener('mousemove', e => {
       clip.end = Math.min(S.videoDuration, Math.max(S.dragState.origVal + delta, clip.start + 0.5));
       clip.end = Math.round(clip.end * 10) / 10;
     } else if (S.dragState.handle === 'body') {
+      // Below a small pixel threshold, treat this as a still-pending click
+      // rather than a drag — mouseup will toggle keep/reject instead of
+      // moving the clip. Once past it, it's a real drag.
+      if (!S.dragState.moved && Math.abs(mx - S.dragState.startX) < 4) return;
+      S.dragState.moved = true;
       const newStart = Math.max(0, S.dragState.origStart + delta);
       const newEnd = newStart + S.dragState.origDur;
       if (newEnd <= S.videoDuration) {
@@ -547,7 +562,14 @@ tlCanvas.addEventListener('mouseleave', () => {
 tlCanvas.addEventListener('mouseup', () => {
   if (S.dragState) {
     const clip = S.clips.find(c => c.id === S.dragState.clipId);
-    if (clip) wsSend({ type: 'update_clip', id: clip.id, start: clip.start, end: clip.end });
+    if (clip) {
+      if (S.dragState.handle === 'body' && !S.dragState.moved) {
+        // A plain click on the clip band (no drag) toggles keep/reject.
+        toggleClipKeep(clip.id);
+      } else {
+        wsSend({ type: 'update_clip', id: clip.id, start: clip.start, end: clip.end });
+      }
+    }
   }
   S.dragState = null;
 });
@@ -579,24 +601,49 @@ function makeClipCard(clip) {
   card.className = `clip-card${clip.keep ? '' : ' rejected'}${S.selectedClip === clip.id ? ' selected' : ''}`;
   card.dataset.clipId = clip.id;
 
-  // Same number as the label drawn on this clip's band in the timeline.
-  const num = document.createElement('div');
-  num.className = 'clip-num';
-  num.textContent = clip.id + 1;
-
-  const thumb = document.createElement('img');
-  thumb.className = 'clip-thumb';
-  thumb.src = `/thumbnail/${clip.id}`;
-  thumb.alt = '';
-  thumb.addEventListener('mouseenter', () => {
+  // Hovering anywhere on the tile (not just the thumbnail) drives the top
+  // preview player. mouseenter/mouseleave don't bubble, so this fires once
+  // per tile visit regardless of which child element is under the cursor.
+  card.addEventListener('mouseenter', () => {
     previewClip = clip;
     reviewPreview.currentTime = clip.start;
     reviewPreview.play().catch(() => {});
   });
-  thumb.addEventListener('mouseleave', () => {
+  card.addEventListener('mouseleave', () => {
     previewClip = null;
     reviewPreview.pause();
   });
+
+  const thumbWrap = document.createElement('div');
+  thumbWrap.className = 'thumb-wrap';
+
+  const thumb = document.createElement('img');
+  thumb.className = 'clip-thumb';
+  thumb.src = thumbnailUrl(clip);
+  thumb.alt = '';
+  thumbWrap.appendChild(thumb);
+
+  // Same number as the label drawn on this clip's band in the timeline.
+  const num = document.createElement('div');
+  num.className = 'clip-num';
+  num.textContent = clip.id + 1;
+  thumbWrap.appendChild(num);
+
+  const badge = document.createElement('span');
+  badge.className = `conf-badge conf-${clip.confidence}`;
+  badge.textContent = clip.confidence;
+  thumbWrap.appendChild(badge);
+
+  // Keep/reject toggle — big, centered over the thumbnail so it reads as
+  // the primary action on the tile.
+  const keepBtn = document.createElement('button');
+  keepBtn.className = `btn-keep ${clip.keep ? 'keep' : 'reject'}`;
+  keepBtn.textContent = clip.keep ? 'Keep' : 'Rejected';
+  keepBtn.addEventListener('click', ev => {
+    ev.stopPropagation();
+    toggleClipKeep(clip.id);
+  });
+  thumbWrap.appendChild(keepBtn);
 
   const info = document.createElement('div');
   info.className = 'clip-info';
@@ -611,16 +658,15 @@ function makeClipCard(clip) {
   dur.textContent = `${clip.duration.toFixed(1)}s`;
   dur.dataset.field = 'duration';
 
-  const badge = document.createElement('span');
-  badge.className = `conf-badge conf-${clip.confidence}`;
-  badge.textContent = clip.confidence;
-
-  info.append(times, dur, badge);
+  info.append(times, dur);
 
   const controls = document.createElement('div');
   controls.className = 'clip-controls';
 
-  // Nudge controls
+  // Nudge controls — chevrons instead of "-1"/"+0.5" text pills: chevron
+  // count signals step size (single = 0.5s, double = 1s), direction signals
+  // sign. The exact amount is still available as a tooltip.
+  const NUDGE_SYMBOLS = { '-1': '«', '-0.5': '‹', '0.5': '›', '1': '»' };
   for (const [field, label] of [['start','Start'],['end','End']]) {
     const row = document.createElement('div');
     row.className = 'nudge-row';
@@ -630,8 +676,11 @@ function makeClipCard(clip) {
     row.appendChild(lbl);
     for (const delta of [-1, -0.5, 0.5, 1]) {
       const btn = document.createElement('button');
-      btn.className = 'btn-nudge';
-      btn.textContent = (delta > 0 ? '+' : '') + delta;
+      btn.className = 'btn-nudge' + (delta === 0.5 ? ' nudge-gap' : '');
+      btn.textContent = NUDGE_SYMBOLS[String(delta)];
+      const signed = `${delta > 0 ? '+' : ''}${delta}s`;
+      btn.title = signed;
+      btn.setAttribute('aria-label', `${label} ${signed}`);
       btn.addEventListener('click', ev => {
         ev.stopPropagation();
         nudgeClip(clip.id, field, delta);
@@ -641,25 +690,29 @@ function makeClipCard(clip) {
     controls.appendChild(row);
   }
 
-  // Keep/reject toggle
-  const keepBtn = document.createElement('button');
-  keepBtn.className = `btn-keep ${clip.keep ? 'keep' : 'reject'}`;
-  keepBtn.textContent = clip.keep ? 'Keep' : 'Rejected';
-  keepBtn.addEventListener('click', ev => {
-    ev.stopPropagation();
-    clip.keep = !clip.keep;
-    wsSend({ type: 'update_clip', id: clip.id, keep: clip.keep });
-    card.classList.toggle('rejected', !clip.keep);
-    keepBtn.className = `btn-keep ${clip.keep ? 'keep' : 'reject'}`;
-    keepBtn.textContent = clip.keep ? 'Keep' : 'Rejected';
-    updateClipCount();
-    drawTimeline();
-  });
-  controls.appendChild(keepBtn);
-
-  card.append(num, thumb, info, controls);
+  card.append(thumbWrap, info, controls);
   card.addEventListener('click', () => selectClip(clip.id));
   return card;
+}
+
+// Flips a clip's keep/reject state and patches the DOM in place — shared by
+// the tile's own button and a plain (non-drag) click on its timeline band.
+function toggleClipKeep(clipId) {
+  const clip = S.clips.find(c => c.id === clipId);
+  if (!clip) return;
+  clip.keep = !clip.keep;
+  wsSend({ type: 'update_clip', id: clip.id, keep: clip.keep });
+  const card = document.querySelector(`.clip-card[data-clip-id="${clip.id}"]`);
+  if (card) {
+    card.classList.toggle('rejected', !clip.keep);
+    const keepBtn = card.querySelector('.btn-keep');
+    if (keepBtn) {
+      keepBtn.className = `btn-keep ${clip.keep ? 'keep' : 'reject'}`;
+      keepBtn.textContent = clip.keep ? 'Keep' : 'Rejected';
+    }
+  }
+  updateClipCount();
+  drawTimeline();
 }
 
 // Single source of truth for "which clip is selected", keeping the timeline
@@ -1603,7 +1656,7 @@ function makeExportCard(clip) {
 
   const thumb = document.createElement('img');
   thumb.className = 'clip-thumb';
-  thumb.src = `/thumbnail/${clip.id}`;
+  thumb.src = thumbnailUrl(clip);
   thumb.alt = '';
   thumbWrap.appendChild(thumb);
 
