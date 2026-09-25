@@ -1,5 +1,7 @@
 # rapid-surf-video-clipper
 
+![Live person detection on a surf session, with the detection zone drawn over the lineup](docs/images/detection-screenshot.png)
+
 A local desktop tool that scans a long GoPro recording of a rapid/river surf
 session — a fixed camera on a static standing wave — detects the segments
 where someone is actually surfing (via person detection), and lets you
@@ -162,7 +164,6 @@ only reliable under a few conditions about the source footage:
   COCO-trained person detector, not fine-tuned for water sports — unusual
   poses (prone paddling, a mostly-submerged body) may get lower confidence
   than a clearly visible, upright person.
-
 
 ## Design choices
 
